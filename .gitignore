@@ -1,0 +1,11 @@
+tags
+*.hi
+*.o
+log/*
+tests/redis.sock
+tests/dump.rdb
+collector
+check
+snippet
+tests/redis.log
+tests/redis.pid
