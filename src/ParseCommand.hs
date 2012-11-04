@@ -33,35 +33,82 @@ import Control.Monad.CatchIO (catch)
 import Control.Exception (SomeException)
 -}
 
-{-
-PUTVAL sirius.lhr.operationaldynamics.com/cpu-2/cpu-user interval=10.000 1351756697.945:0.103719
-PUTVAL sirius.lhr.operationaldynamics.com/interface-eth0/if_packets interval=10.000 1351756688.304:1.79711:1.69727
-PUTVAL sirius.lhr.operationaldynamics.com/load/load interval=10.000 1351756797.945:0.000000:0.010000:0.050000
--}
-
+--
+-- Parse a single "command" line coming from collectd, of the form
+--
+-- PUTVAL sirius.lhr.operationaldynamics.com/cpu-2/cpu-user interval=10.000 1351756697.945:0.103719
+-- PUTVAL sirius.lhr.operationaldynamics.com/interface-eth0/if_packets interval=10.000 1351756688.304:1.79711:1.69727
+-- PUTVAL sirius.lhr.operationaldynamics.com/load/load interval=10.000 1351756797.945:0.000000:0.010000:0.050000
+--
+-- as transmitted by the write_http plugin.
+--
 
 data Metric = Metric {
-    mIdentifier :: ByteString,
-    mInterval :: Rational,
+    mIdentifier :: Identifier,
+    mInterval :: Double,
+    mTime :: Double,
     mValue :: ByteString
-} deriving (Show) 
+} deriving (Show)
+
+-- We'll be making a non linear shift from Collectd's measurements to a
+-- datatype here, considering interface-eth0 to be a measurement but all the
+-- cpu-* be a single measurement, cpu. We start by ignoring the plugin /
+-- plugin-instance and type / type-instance distinction.
+
+data Identifier = Identifier {
+    iHostname :: ByteString,
+    iPlugin :: ByteString,
+    iType :: ByteString
+} deriving (Show, Eq)
+
+data Value =
+      CpuUsage {
+        vUsage :: Double
+      }
+    | InterfacePackets {
+        packetsTx :: Rational
+      }
+    | LoadAverage {
+        loadShort :: Double,
+        loadMedium :: Double,
+        loadLong :: Double
+      }
+  deriving (Show, Eq)
 
 
 parseLine :: Parser Metric
 parseLine = do
     i <- string "PUTVAL" *> skipSpace *> identifier
     l <- skipSpace *> interval
-    v <- skipSpace *> value
-    return Metric { mIdentifier = i, mInterval = l, mValue = v }
+    t <- skipSpace *> timestamp
+    v <- value
+    return Metric { mIdentifier = i, mInterval = l, mTime = t,  mValue = v }
 
-identifier :: Parser ByteString
-identifier =
-    takeTill isSpace
+--
+-- Parse a fragment in the following form
+-- sirius.lhr.operationaldynamics.com/cpu-2/cpu-user
+--
 
-interval :: Parser Rational
+identifier :: Parser Identifier
+identifier = do
+    h <- takeTill isSlash <* char '/'
+    p <- takeTill isSlash <* char '/'
+    t <- takeTill isSpace
+    return Identifier { iHostname = h, iPlugin = p, iType = t }
+  where
+    isSlash :: Char -> Bool
+    isSlash c = c == '/'
+--    
+
+interval :: Parser Double
 interval = do
-    string "interval=" *> rational
+    string "interval=" *> double 
 
+timestamp :: Parser Double
+timestamp =
+    double <* char ':'
+    
+    
 
 value :: Parser ByteString
 value =
