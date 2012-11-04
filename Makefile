@@ -38,6 +38,8 @@ $(BUILDDIR)/.dir:
 	mkdir $(BUILDDIR)/core
 	@echo "MKDIR\t$(BUILDDIR)/tests"
 	mkdir $(BUILDDIR)/tests
+	@echo "MKDIR\t$(BUILDDIR)/junk"
+	mkdir $(BUILDDIR)/junk
 	touch $(BUILDDIR)/.dir
 
 #
@@ -63,15 +65,13 @@ collector:
 	@echo "LN -s\t$@"
 	ln -s $(BUILDDIR)/core/collector.bin $@
 
-build-snippet: dirs $(BUILDDIR)/snippet/snippet.bin snippet
+build-junk: dirs $(BUILDDIR)/junk/snippet.bin snippet
 
-$(BUILDDIR)/snippet/snippet.bin: $(CORE_SOURCES)
-	@echo "MKDIR\t$(BUILDDIR)/snippet"
-	-mkdir $(BUILDDIR)/snippet
+$(BUILDDIR)/junk/snippet.bin: $(CORE_SOURCES)
 	@echo "GHC\t$@"
 	$(GHC) --make -O -threaded  \
 		-prof -fprof-auto \
-		-outputdir $(BUILDDIR)/snippet \
+		-outputdir $(BUILDDIR)/junk \
 		-i"$(BUILDDIR):src" \
 		-o $@ \
 		src/Snippet.hs
@@ -80,7 +80,7 @@ $(BUILDDIR)/snippet/snippet.bin: $(CORE_SOURCES)
 
 snippet:
 	@echo "LN -s\t$@"
-	ln -s $(BUILDDIR)/snippet/snippet.bin $@
+	ln -s $(BUILDDIR)/junk/snippet.bin $@
 
 #
 # Build test suite code

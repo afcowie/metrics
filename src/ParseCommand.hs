@@ -65,7 +65,14 @@ interval = do
 
 value :: Parser ByteString
 value =
-    takeTill isSpace <* endOfLine
+    takeTill theEnd
+
+--
+-- Annoyingly, isEndOfLine has type (Word8 -> Bool), so we have to cast.
+--
+
+theEnd :: Char -> Bool
+theEnd c = isEndOfLine $ fromIntegral $ fromEnum c
 
 processInput :: ByteString -> Either String Metric
 processInput x' = parseOnly parseLine x'

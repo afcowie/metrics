@@ -34,7 +34,7 @@ import Control.Monad.CatchIO (catch)
 import Control.Exception (SomeException)
 import System.IO (stderr, hFlush)
 
-import ParseCommand
+import ParseCommand (processInput)
 
 --
 -- Top level URL routing logic.
