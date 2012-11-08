@@ -81,7 +81,7 @@ parseLine = do
     i <- string "PUTVAL" *> skipSpace *> identifier
     l <- skipSpace *> interval
     t <- skipSpace *> timestamp
-    v <- value
+    v <- value <* endOfLine
     return Metric { mIdentifier = i, mInterval = l, mTime = t,  mValue = v }
 
 --
@@ -121,5 +121,9 @@ value =
 theEnd :: Char -> Bool
 theEnd c = isEndOfLine $ fromIntegral $ fromEnum c
 
-processInput :: ByteString -> Either String Metric
-processInput x' = parseOnly parseLine x'
+
+parseLines :: Parser [Metric]
+parseLines = many (many endOfLine *> parseLine)
+
+processInput :: ByteString -> Either String [Metric]
+processInput x' = parseOnly parseLines x'
