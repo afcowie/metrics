@@ -38,7 +38,7 @@ the attoparsec code is doing, changing anything is a bit like poking a
 stick at a nest of pit vipers.
 
 Which is why I really loved Trifeca (it helped me debug it) and now just
-need to learn how to use it better [once you release a new version].
+need to learn how to use it better [once a new verion is released].
 
 AfC
 
