@@ -19,19 +19,14 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module ParseCommand where
+module ParseCommandTrifecta where
 
 import Prelude hiding (catch)
 
 import Data.ByteString (ByteString)
 import Control.Applicative
-import Data.Attoparsec.ByteString.Char8
-
-{-
-import Control.Monad.Trans (liftIO)
-import Control.Monad.CatchIO (catch)
-import Control.Exception (SomeException)
--}
+import Text.Trifecta
+import Data.Monoid
 
 --
 -- Parse a single "command" line coming from collectd, of the form
@@ -47,7 +42,7 @@ data Metric = Metric {
     mIdentifier :: Identifier,
     mInterval :: Double,
     mTime :: Double,
-    mValue :: ByteString
+    mValue :: String
 } deriving (Show)
 
 -- We'll be making a non linear shift from Collectd's measurements to a
@@ -56,32 +51,18 @@ data Metric = Metric {
 -- plugin-instance and type / type-instance distinction.
 
 data Identifier = Identifier {
-    iHostname :: ByteString,
-    iPlugin :: ByteString,
-    iType :: ByteString
+    iHostname :: String,
+    iPlugin :: String,
+    iType :: String
 } deriving (Show, Eq)
 
-data Value =
-      CpuUsage {
-        vUsage :: Double
-      }
-    | InterfacePackets {
-        packetsTx :: Rational
-      }
-    | LoadAverage {
-        loadShort :: Double,
-        loadMedium :: Double,
-        loadLong :: Double
-      }
-  deriving (Show, Eq)
 
-
-parseLine :: Parser Metric
+parseLine :: MonadParser m => m Metric
 parseLine = do
-    i <- string "PUTVAL" *> skipSpace *> identifier
-    l <- skipSpace *> interval
-    t <- skipSpace *> timestamp
-    v <- value <* endOfLine
+    i <- string "PUTVAL" *> space *> label
+    l <- space *> interval
+    t <- timestamp
+    v <- value
     return Metric { mIdentifier = i, mInterval = l, mTime = t,  mValue = v }
 
 --
@@ -89,41 +70,52 @@ parseLine = do
 -- sirius.lhr.operationaldynamics.com/cpu-2/cpu-user
 --
 
-identifier :: Parser Identifier
-identifier = do
-    h <- takeTill isSlash <* char '/'
-    p <- takeTill isSlash <* char '/'
-    t <- takeTill isSpace
+label :: MonadParser m => m Identifier
+label = do
+    h <- some character <* char '/'
+    p <- some character <* char '/'
+    t <- some character -- till space
     return Identifier { iHostname = h, iPlugin = p, iType = t }
   where
     isSlash :: Char -> Bool
     isSlash c = c == '/'
+    
+    character = letter <|> digit <|> char '_' <|> char '-' <|> char '.'
 --    
 
-interval :: Parser Double
+interval :: MonadParser m => m Double
 interval = do
     string "interval=" *> double 
 
-timestamp :: Parser Double
+timestamp :: MonadParser m => m Double
 timestamp =
     double <* char ':'
     
     
 
-value :: Parser ByteString
+value :: MonadParser m => m String
 value =
-    takeTill theEnd
+    some (numeral <|> char ':') <* eol
 
---
--- Annoyingly, isEndOfLine has type (Word8 -> Bool), so we have to cast.
---
+numeral :: MonadParser m => m Char
+numeral =
+    digit <|> char '.' <?> "numeral ('0'..'9' or '.')"
 
-theEnd :: Char -> Bool
-theEnd c = isEndOfLine $ fromIntegral $ fromEnum c
+eol :: MonadParser m => m Char
+eol =
+    char '\n' <|> (char '\r' *> char '\n')
 
 
-parseLines :: Parser [Metric]
-parseLines = many (many endOfLine *> parseLine)
+parseLines :: MonadParser m => m [Metric]
+parseLines =
+    many (many eol *> parseLine)
 
-processInput :: ByteString -> Either String [Metric]
-processInput x' = parseOnly parseLines x'
+
+processInputT :: ByteString -> IO (Either String [Metric])
+processInputT x' = do
+    e <- case parseByteString parseLines mempty x' of
+        Failure r   -> do
+            displayLn r
+            return (Left "Boom")
+        Success _ a -> return (Right a)
+    return e

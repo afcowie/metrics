@@ -19,6 +19,7 @@ endif
 #
 
 GHC=ghc \
+	-rtsopts \
 	-Wall \
 	-Werror \
 	-fwarn-tabs \

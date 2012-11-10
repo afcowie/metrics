@@ -19,7 +19,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module ParseCommand3 where
+module ParseCommandParsec where
 
 import Prelude hiding (catch)
 
@@ -55,20 +55,6 @@ data Identifier = Identifier {
     iPlugin :: String,
     iType :: String
 } deriving (Show, Eq)
-
-data Value =
-      CpuUsage {
-        vUsage :: Double
-      }
-    | InterfacePackets {
-        packetsTx :: Rational
-      }
-    | LoadAverage {
-        loadShort :: Double,
-        loadMedium :: Double,
-        loadLong :: Double
-      }
-  deriving (Show, Eq)
 
 
 parseLine :: Parser Metric
@@ -123,5 +109,5 @@ eol = char '\n' <|> (char '\r' *> char '\n')
 parseLines :: Parser [Metric]
 parseLines = many (many eol *> parseLine)
 
-processInput3 :: ByteString -> Either ParseError [Metric]
-processInput3 x' = parse parseLines "" x'
+processInputP :: ByteString -> Either ParseError [Metric]
+processInputP x' = parse parseLines "" x'
