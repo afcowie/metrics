@@ -34,7 +34,7 @@ import Control.Monad.CatchIO (catch)
 import Control.Exception (SomeException)
 import System.IO (stderr, hFlush)
 
-import ParseCommand (processInput)
+import ParseCommandAttoparsec (processInputA)
 
 --
 -- Top level URL routing logic.
@@ -87,7 +87,7 @@ handleAsPlain = do
     bl <- readRequestBody 65535
     let b' = S.concat $ L.toChunks bl
     
-    let Right m = processInput b'
+    let Right m = processInputA b'
     debug $ S.pack $ show m
 
 --

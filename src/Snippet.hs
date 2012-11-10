@@ -13,7 +13,7 @@ ex' = "PUTVAL sirius.lhr.operationaldynamics.com/cpu-2/cpu-user interval=10.000 
 
 test0 :: ByteString -> IO String
 test0 x' = do
-    re <- return $ processInput x'
+    re <- return $ processInputA x'
     case re of
         Left  e  -> return $ show e
         Right r  -> return $ show r
@@ -29,7 +29,7 @@ test2 x' = do
 
 test3 :: ByteString -> IO String
 test3 x' = do
-    re <- return $ processInput3 x'
+    re <- return $ processInputP x'
     case re of
         Left  e  -> return $ show e
         Right r  -> return $ show r
