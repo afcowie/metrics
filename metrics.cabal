@@ -1,0 +1,28 @@
+cabal-version:       >= 1.2
+name:                metrics
+version:             0.1.1.0
+synopsis:            Gathering telemetry from systems, rendering, and analysis
+license:             GPL-2
+license-file:        COPYING
+author:              Andrew Cowie <andrew@operationaldynamics.com>
+maintainer:          Andrew Cowie <andrew@operationaldynamics.com>
+copyright:           © 2012 Operational Dynamics Consulting, Pty Ltd
+category:            Web
+tested-with:         GHC == 7.4
+
+build-type:          Simple
+
+executable           metrics
+  build-depends:     base,
+                     bytestring,
+                     MonadCatchIO-transformers,
+                     mtl,
+                     attoparsec,
+                     hedis >= 0.5,
+                     snap-core,
+                     snap-server
+  hs-source-dirs:    src
+  main-is:           Collector.hs
+
+
+-- vim: set tabstop=21 expandtab:
